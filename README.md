@@ -62,7 +62,7 @@ yarn sucrase-node src/server.js
 
 Mas e o **Nodemon** para o **hot reload**? No **package.json** vamos criar o nosso novo script para subir a aplicação.
 
-```
+```javascript
 {
   "name": "barberShop",
   "version": "1.0.0",
@@ -165,7 +165,7 @@ Mas é possível também a formatação automática, o ESLint permite que dentro
 
 Por último vamos sobrescrever algumas regras do ESLINT em **.eslintrc.js**:
 
-```json
+```javascript
   rules: {
   	// Existe uma regra padrão do ESLint que todo método de uma classe precisa utilizar o THIS, e o nosso controller e o nosso APP precisa estar dentro de uma classe e não precisa usar isso
     "class-methods-use-this": "off",
@@ -192,7 +192,7 @@ yarn add prettier eslint-config-prettier eslint-plugin-prettier -D
 
 Agora vamos no **.eslintrc.js** e em
 
-```json
+```javascript
 module.exports = {
   env: {
     es6: true,
@@ -259,7 +259,11 @@ insert_final_newline = true
 
 Por isso é bom garantir que todos os desenvolvedores estejam utilizando tudo da mesma forma.
 
-### 4. sequelize & sequelize-cli
+### 4. Dotenv (Configurando variáveis de ambiente)
+
+
+
+### 5. sequelize & sequelize-cli
 
 **Sequelize é um ORM para NodeJS** para Bancos de Dados Relacionais, ou seja funciona com MySql, Postgres, etc.
 
@@ -331,7 +335,7 @@ Alguns conceitos:
 - Depois que a migration foi enviada para outros devs ou para produção, JAMAIS poderá ser alterada.
 - Cada migration deve realizar alterações em APENAS UMA TABELA, você pode criar várias migrations para alterações maiores.
 
-#### 4.1 Seeds
+#### 5.1 Seeds
 
 Agora um conceito muito bacana quando você precisa configurar um ambiente de testes de sua aplicação. Vamos supor que um novo desenvolvedor entra no seu time e instala o software pra ele começar a desenvolver na máquina dele é muito legal se o seu software já vier com alguns dados fictícios, como usuário, administrador, produtos, compras, etc. Para isso podemos utilizar os Seeds.
 
@@ -343,7 +347,7 @@ Agora um conceito muito bacana quando você precisa configurar um ambiente de te
 
 Por exemplo, eu tenho uma tabela chamada *Status do Pedido*, e eu sei que os status são 1, 2, 3 ou 4, Pendente, Aprovado, Completo e Enviado, são status que dificilmente vão mudar e quero que eles já estejam na tabela. Vamos utilizar as migrations em vez dos Seeds.
 
-#### 4.2 Instalação
+#### 5.2 Instalação
 
 ```shell
 yarn add sequelize
@@ -351,7 +355,7 @@ yarn add sequelize
 yarn add sequelize-cli -D
 ```
 
-#### 4.3 Link da documentação:
+#### 5.3 Link da documentação:
 
 https://sequelize.org
 
