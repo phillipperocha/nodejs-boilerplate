@@ -1,4 +1,4 @@
-import 'dotenv/config';
+require('dotenv').config(); // magic
 
 module.exports = {
   dialect: 'postgres',
