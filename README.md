@@ -401,6 +401,18 @@ yarn add bcryptjs
 
 https://www.npmjs.com/package/bcryptjs
 
+### 7. Jsonwebtoken (JWT)
+
+#### 7.1 Instalação
+
+```shell
+yarn add jsonwebtoken
+```
+
+#### 7.2 Documentação
+
+https://www.npmjs.com/package/jsonwebtoken
+
 ------
 
 # Como fazer:

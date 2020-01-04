@@ -18,7 +18,6 @@ class User extends Model {
     // Here we will use sequelize hooks.
     // They are basically code snippets that are executed automatically.
     this.addHook('beforeSave', async user => {
-      console.log('FOIII');
       if (user.password) {
         // We want to encrypt and need to say the number of rounds to encrypt
         user.password_hash = await bcrypt.hash(user.password, 8);
@@ -26,6 +25,10 @@ class User extends Model {
     });
 
     return this;
+  }
+
+  checkPassword(password) {
+    return bcrypt.compare(password, this.password_hash);
   }
 }
 export default User;
