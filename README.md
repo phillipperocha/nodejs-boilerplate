@@ -383,7 +383,23 @@ module.exports = {
 
 ```
 
+## 6. BcryptJS
 
+para resolver este problema das chaves que são usados os algoritmos de hashing criptográfico, como por exemplo, o crypt. Com estes algoritmos, uma vez que a informação é criptografada, não é mais possível reverter a situação e recuperar os dados. E para poder validar os dados, no caso de login, é só calcular o hash da senha fornecida pelo usuário e comparar com o hash do banco de dados. Bem simples.
+
+Porém, com a constante evolução da tecnologia, é possível criar algoritmos eficientes com o intuito de quebrar hashes por força bruta, e foi por isso que surgiu em 1999, o Bcrypt.
+
+O Bcrypt oferece uma maior segurança do que os outros algoritmos criptográficos porque contém uma variável que é proporcional à quantidade de processamento necessário para criptografar a informação desejada, tornando-o resistente a ataques do tipo “força-bruta”.
+
+#### 6.1 Instalação
+
+```shell
+yarn add bcryptjs
+```
+
+#### 6.2 Documentação
+
+https://www.npmjs.com/package/bcryptjs
 
 ------
 
