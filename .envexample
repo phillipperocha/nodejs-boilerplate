@@ -1,5 +1,10 @@
 APP_URL=http://localhost:3333
+
+#Ambiente onde nossa aplicação estará rodando
 NODE_ENV=development
+
+# Auth (Variáveis de ambiente relacionadas a autenticação)
+APP_SECRET=
 
 # Database
 
