@@ -413,6 +413,142 @@ yarn add jsonwebtoken
 
 https://www.npmjs.com/package/jsonwebtoken
 
+### 8. Yup
+
+É uma boa prática ter a validação do usuário no frontend no backend, a vantagem de estar no frontend é que a validação é mais rápida, não precisa ir diretamente no servidor para poder verificar se tem algum dado errado ou faltando, ganha em velocidade, também em menos tráfego ao servidor e principalmente na segurança. Ter só a validação no frontend não é uma boa prática, na verdade é uma péssima prática.
+
+Vamos validar o frontend com biblioteca [Yup](https://github.com/jquense/yup), que faz uma validação no schema, Schema Validation:
+
+#### 8.1 Instalação
+
+```shell
+yarn add yup
+```
+
+#### 8.2 Documentação
+
+https://github.com/jquense/yup
+
+#### 8.3 Exemplo
+
+Para aproveitar o embalo do Usuário, vamos validar seus dados.
+
+```javascript
+// import Yup from 'yup'
+// Não é possível importar o Yup dessa forma porque ele não tem nenhum expor default
+// Por isso precisamos importar todas as funções numa variável Yup
+import * as Yup from 'yup';
+import User from '../models/User';
+
+class UserController {
+  async store(req, res) {
+    // Aqui dentro do controller vamos começar com nossas validações
+    // Utilizamos o Yup.object() para informar que estamos validando um objeto
+    // Já que o nosso req.body é um objeto.
+    const schema = Yup.object().shape({
+      // E dentro vamos passar o formato que esse schema tem que ter
+      // Ele tem que ter um nome
+      name: Yup.string().required(),
+      // email() ele valida tudo sobre email, se tem arroba, etc.
+      email: Yup.string()
+        .email()
+        .required(),
+      // E a senha vai conter o mínimo de 6 dígitos
+      password: Yup.string()
+        .required()
+        .min(6),
+    });
+
+    // Agora precisamos ver se o req.body está passando conforme o schema criado
+    // o método isValid() é assíncrono, por isso precisamos do await
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'Validation fails' });
+    }
+
+    const userExists = await User.findOne({ where: { email: req.body.email } });
+
+    if (userExists) {
+      return res.status(400).json({ error: 'User alredy exists.' });
+    }
+    const { id, name, email, provider } = await User.create(req.body);
+
+    return res.json({
+      id,
+      name,
+      email,
+      provider,
+    });
+  }
+
+  async update(req, res) {
+    // Agora faremos de forma similar aqui na edição do usuário com umas regras a mais
+
+    const schema = Yup.object().shape({
+      // Como o nome é uma edição, ele não precisa ser obrigatório
+      name: Yup.string(),
+      // email também
+      email: Yup.string().email(),
+      // A senha também não. Mas quando ela vier acompanhado a senha antiga (OldPassword)
+      // ela será obrigatória, porque quer dizer que ele está querendo alterá-la.
+      oldPassword: Yup.string().min(6),
+      password: Yup.string()
+        .min(6)
+        // Então, se ele falar o oldPassword, precisa informar o password
+        // No when temos acesso a todos os outros campos do Yup
+        // O when recebe o campo no primeiro parâmetro e em seguida uma função
+        // Na função passamos o proprio campo de primeiro parâmetro e em seguida
+        // A continuação da validação
+        .when('oldPassword', (oldPassword, field) =>
+          // Se o oldPassword existir, o field password vai ser required, caso o contrário não
+          // Isso é o retorno da função, por isso passamos o field
+          oldPassword ? field.required() : field
+        ),
+      // Ainda queremos mais, quando o password for informado o usuário tem que enviar
+      // ainda um campo confirmPasssword com o mesmo valor para garantir a senha.
+      confirmPassword: Yup.string().when('password', (password, field) =>
+        // quando for passado o password, o confirmPassword é obrigatório e
+        // Precisa assumir um dos valores de dentro do array.
+        // O yup tem um método para se referir a outro campo chamado ref
+        password ? field.required().oneOf([Yup.ref('password')]) : field
+      ),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'Validation fails' });
+    }
+
+    const { email, oldPassword } = req.body;
+
+    const user = await User.findByPk(req.userId);
+
+    if (email !== user.email) {
+      const userExists = await User.findOne({ where: { email } });
+
+      if (userExists) {
+        return res.status(400).json({ error: 'USer alredy exists.' });
+      }
+    }
+
+    if (oldPassword && !(await user.checkPassword(oldPassword))) {
+      return res.status(401).json({ error: 'Password does not match' });
+    }
+
+    const { id, name, provider } = await user.update(req.body);
+
+    return res.json({
+      id,
+      name,
+      email,
+      provider,
+    });
+  }
+}
+
+export default new UserController();
+```
+
+
+
 ------
 
 # Como fazer:
