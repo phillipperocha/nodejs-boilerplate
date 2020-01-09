@@ -413,7 +413,7 @@ yarn add jsonwebtoken
 
 https://www.npmjs.com/package/jsonwebtoken
 
-### 8. Yup
+### 8. Yup (Validação)
 
 É uma boa prática ter a validação do usuário no frontend no backend, a vantagem de estar no frontend é que a validação é mais rápida, não precisa ir diretamente no servidor para poder verificar se tem algum dado errado ou faltando, ganha em velocidade, também em menos tráfego ao servidor e principalmente na segurança. Ter só a validação no frontend não é uma boa prática, na verdade é uma péssima prática.
 
@@ -547,7 +547,113 @@ class UserController {
 export default new UserController();
 ```
 
+### 9. Multer 
 
+Os usuários que são prestadores de serviço poderão ter um avatar e subir um arquivo de imagem. Primeiro precisaremos tratar de upload de arquivos, e existem várias formas de fazer isso na aplicação.
+
+Primeira forma mais tradicional seria enviar a imagem junto com os outros dados enquanto ele está fazendo o registro dele. Por exemplo quando ele for incluir o nome, senha, email e a imagem do avatar viria numa única requisição no backend e o backend trataria as informações do avatar primeiro (upload de arquivos e tudo mais) e depois salvando tudo de uma vez no banco de dados.
+
+A segunda forma, e a que usaremos (e eu prefiro), é fazer o upload de arquivos isolado. O que aconteceria é que na hora que ele selecionasse a imagem pra incluir no avatar dele, essa imagem já era enviada para o servidor e o upload já é feito e o servidor retorna um ID da imagem. E na hora que formos preencher os dados do cadastro, salvamos apenas o ID da imagem junto dos dados do avatar, assim conseguindo manter a estrutura de **JSON** pra enviar os dados do prestador de serviço e não precisaremos utilizar outra estrutura já que o **JSON NAO SUPORTA ENVIO DE UPLOAD DE ARQUIVOS.**
+
+Precisamos de uma biblioteca que precise lidar com envio de corpo diferente, além do formato JSON que estamos acostumado. **Quando precisamos lidar com arquivo nas requisições, precisamos enviar as requisições num formato *MULTIPART FORM DATA* que é o único formato que suporta o envio de arquivos físicos.
+
+Para isso utilizaremos **Multer**:
+
+#### Instalação:
+
+```shell
+yarn add multer
+```
+
+Assim que instalarmos o multer, criaremos uma pasta na raíz do projeto **tmp/uploads**, e aí ficarão todos os uploads que fizermos.
+
+Agora criaremos **src/config/multer.js**:
+
+```javascript
+// Aqui dentro ficará toda a nossa configuração de upload de arquivos
+import multer from 'multer';
+// Importaremos também uma biblioteca do node chamada crypto
+import crypto from 'crypto';
+// Também importaremos duas funções do path do node
+// extname - que retorna a extensão baseado num nome de arquivo
+// resolve - para percorrer um caminho na aplicação
+import { extname, resolve } from 'path';
+
+// Aqui exportaremos um objeto de configuração
+export default {
+  // A primeira chave é o storage: como o multer vai guardar nossos arquivos de imagem
+  // aqui podemos utilizar vários storages que o multer tem, por exemplo podemos guardar
+  // nossos arquivos de imagem dentro de um CDN - Content Delivery Network
+  // São servidores online feitos para armazenamento de arquivos físicos (S3 da Amazon) ou Digital Ocean Space
+  // Mas no nosso caso, vamos guardar as imagens dentro dos arquivos da aplicação
+  // na pasta temp. Para isso utilizaremos diskStorage
+  storage: multer.diskStorage({
+    // Aqui estamos voltando a partir do diretório atual de pasta em pasta
+    // Até chegar na pasta de uploads
+    destination: resolve(__dirname, '..', '..', 'tmp', 'uploads'),
+    // cb de callback
+    // Aqui é basicamente como vamos formatar o nome de arquivo da nossa imagem
+    // Poderiamos deixar com o mesmo nome do arquivo, mas não é recomendado
+    // O que faremos é transformar todo nome de imagem num código único
+    // (req, a requisição - file: temos acesso ao tipo, tamanho, formato, nome, etc)
+    filename: (req, file, cb) => {
+      // vamos utilizar o crypto com o randombytes para gerar caracteres aleatórios
+      // passamos quantos caracteres são e o segundo formato uma callback
+      // para pegar o resultado do crypto.randomBytes()
+      // A função recebe um erro (caso tenha) e uma resposta caso tenha dado tudo certo
+      crypto.randomBytes(16, (err, res) => {
+        // esse cb (callback), é a função que precisamos executar com o nome do arquivo
+        // ou com o erro, caso tenha dado algum problema
+        if (err) return cb(err);
+        // retornaremos o null, pq o callback recebe como primeiro parâmetro o erro
+        // e por segundo passaremos o nome da imagem em sí
+        // transforaremos 16 bytes aleatórios em uma string hexadecimal
+        // e concatenaremos com a extensão do arquivo original
+
+        return cb(null, res.toString('hex') + extname(file.originalname));
+      });
+    },
+  }),
+};
+```
+
+Agora conseguimos testar as configurações do **multer** indo em nossas **rotas**:
+
+```javascript
+import { Router } from 'express';
+import multer from 'multer';
+import multerConfig from './config/multer';
+
+import UserController from './app/controllers/UserController';
+import SessionController from './app/controllers/SessionController';
+
+import authMiddleware from './app/middlewares/auth';
+
+const routes = new Router();
+
+// Variable to uploads
+const upload = multer(multerConfig);
+
+routes.post('/users', UserController.store);
+routes.post('/sessions', SessionController.store);
+
+// We are defining auth middleware as Global, below here all routes needs to auth
+routes.use(authMiddleware);
+
+routes.put('/users', UserController.update);
+
+// Defining a route without a controller and a middleware to just accept single files
+routes.post('/files', upload.single('file'), (req, res) => {
+  return res.json({ ok: true });
+});
+
+export default routes;
+
+```
+
+Agora no **Postman**, vamos criar uma requisição **POST**, para **http://localhost:3333/files/ ** e no **Body** no lugar de **none ou json**, vamos utilizar **form-data**. Dentro dele, na chave, passe o mouse por cima e mude de **Text** para **File**.
+
+Na requisição o nome da chave é **file** e o valor o arquivo.
 
 ------
 
