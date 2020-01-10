@@ -29,7 +29,7 @@ class User extends Model {
 
   // We do the associate method to make relationships between entities
   static associate(models) {
-    this.belongsTo(models.File, { foreignKey: 'avatar_id' });
+    this.belongsTo(models.File, { as: 'avatar', foreignKey: 'avatar_id' });
   }
 
   checkPassword(password) {

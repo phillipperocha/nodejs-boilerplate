@@ -19,6 +19,7 @@ routes.post('/sessions', SessionController.store);
 // We are defining auth middleware as Global, below here all routes needs to auth
 routes.use(authMiddleware);
 
+routes.get('/users', UserController.index);
 routes.put('/users', UserController.update);
 
 // Defining a route without a controller and a middleware to just accept single files
