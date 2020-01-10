@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import Brute from 'express-brute';
+import BruteRedis from 'express-brute-redis';
 import multer from 'multer';
 import multerConfig from './config/multer';
 
@@ -13,8 +15,17 @@ const routes = new Router();
 // Variable to uploads
 const upload = multer(multerConfig);
 
+const bruteStore = new BruteRedis({
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
+});
+
+const bruteForce = new Brute(bruteStore);
+
 routes.post('/users', UserController.store);
-routes.post('/sessions', SessionController.store);
+// We will prevent bruteforce attack to this route. Brute will save the ips in Redis
+// And their attempts.
+routes.post('/sessions', bruteForce.prevent, SessionController.store);
 
 // We are defining auth middleware as Global, below here all routes needs to auth
 routes.use(authMiddleware);

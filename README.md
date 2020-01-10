@@ -709,13 +709,23 @@ export default new App().server;
 
 ​	Aqui apenas fizemos importações, criamos um novo método, e o colocamos dentro do constructor. O método criado, faz uma requisição assíncrona, que no casso receberá o parâmetro de erro primeiro. Um método async, sempre será de erro quando tiver 4 parâmetros. Nele fizemos uma arrow function que irá criar uma variável instanciando o Youch, onde buscará o erro e a requisição feita, mostrando o que aconteceu através de um json. O Youch também pode mostrar em html, mas como estamos usando o conceito de API REST, trabalhamos com json. Agora se testar novamente o erro, verá que aparecerá no insomnia um json dizendo o que aconteceu.
 
-### 11. Brute (Evitando ataques de BruteForce)
+### 11. Bee-queue (Configurando Filas para o Redis)
 
 #### 11.1 Instalação:
 
+```shell
+yarn add bee-queue
 ```
+
+### 12. Brute (Evitando ataques de BruteForce)
+
+#### 12.1 Instalação:
+
+```shell
 yarn add express-brute express-brute-redis
 ```
+
+
 
 
 

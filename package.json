@@ -13,6 +13,8 @@
     "bee-queue": "^1.2.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "express-brute": "^1.0.1",
+    "express-brute-redis": "^0.0.1",
     "jsonwebtoken": "^8.5.1",
     "multer": "^1.4.2",
     "pg": "^7.17.0",
