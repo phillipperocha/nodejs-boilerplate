@@ -1,3 +1,4 @@
+# Url onde a API está executando
 APP_URL=http://localhost:3333
 
 #Ambiente onde nossa aplicação estará rodando
@@ -13,3 +14,8 @@ DB_USER=
 DB_PASS=
 DB_NAME=
 DB_PORT=
+
+# Redis
+
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379

@@ -559,7 +559,7 @@ Precisamos de uma biblioteca que precise lidar com envio de corpo diferente, al�
 
 Para isso utilizaremos **Multer**:
 
-#### Instalação:
+#### 9.1 Instalação:
 
 ```shell
 yarn add multer
@@ -655,7 +655,7 @@ Agora no **Postman**, vamos criar uma requisição **POST**, para **http://local
 
 Na requisição o nome da chave é **file** e o valor o arquivo.
 
-### 10. Youch
+### 10. Youch (Error Handler)
 
 ​	O Youch é responsável por retornar uma mensagem de erro. Para isso, voltaremos no arquivo **app.js**, e adicionaremos algumas coisas, mas primeiro, vamos começar instalando uma nova ferramenta chamada **Youch**, através do comando no terminal `yarn add youch`. O **Youch** é uma biblioteca que já traz consigo as mensagens de erro para que possamos visualizar o que aconteceu. Após intalado, deixe o **app.js** dessa forma:
 
@@ -707,8 +707,17 @@ export default new App().server;
 
 
 
-
 ​	Aqui apenas fizemos importações, criamos um novo método, e o colocamos dentro do constructor. O método criado, faz uma requisição assíncrona, que no casso receberá o parâmetro de erro primeiro. Um método async, sempre será de erro quando tiver 4 parâmetros. Nele fizemos uma arrow function que irá criar uma variável instanciando o Youch, onde buscará o erro e a requisição feita, mostrando o que aconteceu através de um json. O Youch também pode mostrar em html, mas como estamos usando o conceito de API REST, trabalhamos com json. Agora se testar novamente o erro, verá que aparecerá no insomnia um json dizendo o que aconteceu.
+
+### 11. Brute (Evitando ataques de BruteForce)
+
+#### 11.1 Instalação:
+
+```
+yarn add express-brute express-brute-redis
+```
+
+
 
 ------
 
@@ -830,3 +839,142 @@ class User extends Model {
 }
 export default User;
 ```
+
+## 2. Configurando Redis
+
+Quando utilizamos rotas que enviam email para o usuário, elas estão demorando um pouco mais para concluir a requisição, pois elas esperam a requisição concluir para depois devolver a resposta para o usuário, e isso demora porque depende de um serviço externo de envio de email, que depende da internet, etc, fazendo com que demore para concluir a requisição.
+
+Eu poderia remover o `async`e deixaria mais rápido a execução da requisição, pois o email seria enviado de forma assíncrona também, porém se desse algum problema no envio de email eu não poderia informar isso ao usuário.
+
+A melhor forma de controlar isso é com FILAS, com background jobs, controlar que serviços rodem em segundo plano, e de forma que podemos enviar mensagem para o usuário.
+
+Precismos de um banco não relacional que armazena chave e valor apenas, não tem schemas e nem models. Ele é muito mais performático. E iremos utilizar o Redis no Docker.
+
+Para configurar o https://redis.io/ no docker:
+
+```shell
+docker run --name redisbarber -p 6379:6379 -d -t redis:alpine
+```
+
+A versão com alpine vem bem leve, vem com as features mais essenciais do linux.
+
+Agora vamos instalar o [bee-queue](https://github.com/bee-queue/bee-queue), que é uma ferramenta de **background jobs** no node, ele é mais simples e não tem todos os recursos que outros tem, por exemplo o [kue](https://github.com/Automattic/kue). Mas para essa aplicação já serve. **Kue** é menos performático mas tem mais rebustez. Com **Bee Queue** ele agenda os jobs e faz retentativas de reenvio de email, que é o necessário e suficente para aplicação, por isso escolhemos essa lib.
+
+Para instalar o **bee-queue**:
+
+```shell
+yarn add bee-queue
+```
+
+Agora criaremos um arquivo chamado **src/lib/Queue.js** e lá dentro vamos configurar tudo que for relacionado com a nossa fila.
+
+```javascript
+import Bee from 'bee-queue';
+
+class Queue {
+  constructor() {
+    // Aqui dentro poderemos ter várias filas. Cada tipo de serviço,
+    // ou background job, ele vai ter a sua própria fila.
+    // Envio de cancelamento de e-mail, vai ter sua fila. De recuperação de senha outra.
+    this.queues = {};
+
+    // E vamos iniciar a fila
+    this.init();
+  }
+
+  // Chamaremos um método init para dividir a parte de inicialização das filas em outro método.
+  // Assim como fizemos nos databases onde tinhamos que importar todos os models
+  // Vamos ter que importar uma série de Jobs, todos os trabalhos que ficam dentro de filas são chamados de Jobs.
+  init() {}
+}
+
+export default new Queue();
+```
+
+Também criaremos **app/jobs** que guardaremos todos os nossos background jobs. Agora vamos antes criar uma configuração para o **redis.** Vamos fazer **config/redis.js**:
+
+```
+export default {
+  host: '127.0.0.1',
+  port: 6379
+}
+```
+
+Agora vamos voltar para o nosso **Queue.js**:
+
+```javascript
+import Bee from 'bee-queue';
+import redisConfig from '../config/redis';
+
+// Here we import and put our Jobs
+const jobs = [];
+
+class Queue {
+  constructor() {
+    this.queues = {};
+
+    this.init();
+  }
+
+  init() {
+    jobs.forEach(({ key, handle }) => {
+      this.queues[key] = {
+        bee: new Bee(key, {
+          redis: redisConfig,
+        }),
+        handle,
+      };
+    });
+  }
+
+  add(queue, job) {
+    return this.queues[queue].bee.createJob(job).save();
+  }
+
+  proccessQueue() {
+    jobs.forEach(job => {
+      const { bee, handle } = this.queues[job.key];
+
+      bee.process(handle);
+    });
+  }
+}
+
+export default new Queue();
+
+```
+
+Basicamente, o que estamos fazendo até agora? Nós estamos pegando todos os **jobs** e armazenando ele dentro da variável **this.queues**. E dentro do **init()** nós armazenamos a nossa fila, que possui a conexão com o nosso banco não relacional Redis, e também armazenamos o handle, que é o método que vai processar o nosso job, e vai processar e-mail ou fazer qualquer tarefa que precise ser feita em background.
+
+Também fizemos o método **add()** para disparar novos jobs dentro da nossa fila, ou seja, toda vez que um e-mail for disparado, ele é responsável por por um novo job lá dentro da fila. E até aí temos a inicialização da fila, a adição de novos itens na fila, mas ainda não estamos processando as filas. E o processo foi feito com o **processQueue**.
+
+E agora criaremos um último arquivo na pasta **src**, onde estão **app.js e routes.js**, chamado **queue.js**:
+
+```
+import Queue from './lib/Queue';
+
+Queue.proccessQueue();
+```
+
+**Por que fizemos isso?** Porque **a gente não vai executar a aplicação no mesmo node**, ou seja, na mesma execução **que iremos rodar a fila**. Porque a gente pode estar com a nossa fila rodando no servidor, num núcleo (core) do processador com mais ou menos recursos totalmente separada de nossa aplicação. Agora por exemplo nós temos um primeiro terminal rodando a nossa aplicação com o **yarn dev**, e podemos ter um segundo terminal rodando a fila:
+
+```
+node src/queue.js
+```
+
+Se der um erro, isso acontece porque aí não estamos utilizando o **Sucrase**. Então o que podemos fazer para ter o **sucraze** rodando nesse arquivo. Vamos em **package.json**, lá nos **scripts**, onde temos o script do **dev**, criaremos outro chamado **queue**:
+
+```
+"scripts": {
+    "dev": "nodemon src/server.js",
+    "queue": "nodemon src/queue.js"
+  },
+```
+
+Agora só rodar:
+
+```
+yarn queue
+```
+
+E testar o cancelamento! Vemos agora os números do tempo de resposta que foram extremamente melhores que antes e o nosso e-mail chegou da mesma forma.
