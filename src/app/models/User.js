@@ -27,6 +27,11 @@ class User extends Model {
     return this;
   }
 
+  // We do the associate method to make relationships between entities
+  static associate(models) {
+    this.belongsTo(models.File, { foreignKey: 'avatar_id' });
+  }
+
   checkPassword(password) {
     return bcrypt.compare(password, this.password_hash);
   }
