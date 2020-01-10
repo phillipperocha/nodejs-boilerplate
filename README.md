@@ -655,6 +655,61 @@ Agora no **Postman**, vamos criar uma requisição **POST**, para **http://local
 
 Na requisição o nome da chave é **file** e o valor o arquivo.
 
+### 10. Youch
+
+​	O Youch é responsável por retornar uma mensagem de erro. Para isso, voltaremos no arquivo **app.js**, e adicionaremos algumas coisas, mas primeiro, vamos começar instalando uma nova ferramenta chamada **Youch**, através do comando no terminal `yarn add youch`. O **Youch** é uma biblioteca que já traz consigo as mensagens de erro para que possamos visualizar o que aconteceu. Após intalado, deixe o **app.js** dessa forma:
+
+```javascript
+import 'dotenv/config';
+
+import express from 'express';
+import path from 'path';
+// E aqui a importação
+import Youch from 'youch';
+import routes from './routes';
+
+import './database';
+
+class App {
+  constructor() {
+    this.server = express();
+
+    this.middlewares();
+    this.routes();
+    this.exceptionHandler();
+  }
+
+  middlewares() {
+    this.server.use(express.json());
+    this.server.use(
+      '/files',
+      express.static(path.resolve(__dirname, '..', 'tmp', 'uploads'))
+    );
+  }
+
+  routes() {
+    this.server.use(routes);
+  }
+
+  // Aqui adicionamos o exceptionHandler
+  exceptionHandler() {
+    this.server.use(async (err, req, res, next) => {
+      const errors = await new Youch(err, req).toJSON();
+
+      return res.status(500).json(errors);
+    });
+  }
+}
+
+export default new App().server;
+
+```
+
+
+
+
+​	Aqui apenas fizemos importações, criamos um novo método, e o colocamos dentro do constructor. O método criado, faz uma requisição assíncrona, que no casso receberá o parâmetro de erro primeiro. Um método async, sempre será de erro quando tiver 4 parâmetros. Nele fizemos uma arrow function que irá criar uma variável instanciando o Youch, onde buscará o erro e a requisição feita, mostrando o que aconteceu através de um json. O Youch também pode mostrar em html, mas como estamos usando o conceito de API REST, trabalhamos com json. Agora se testar novamente o erro, verá que aparecerá no insomnia um json dizendo o que aconteceu.
+
 ------
 
 # Como fazer:
