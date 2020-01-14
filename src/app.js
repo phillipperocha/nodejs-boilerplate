@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import express from 'express';
 import path from 'path';
+import helmet from 'helmet';
 import Youch from 'youch';
 import routes from './routes';
 
@@ -17,6 +18,7 @@ class App {
   }
 
   middlewares() {
+    this.server.use(helmet());
     this.server.use(express.json());
     this.server.use(
       '/files',

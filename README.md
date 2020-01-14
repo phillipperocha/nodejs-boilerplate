@@ -725,9 +725,17 @@ yarn add bee-queue
 yarn add express-brute express-brute-redis
 ```
 
+### 13 - Helmet (Proteção contra XSS injection)
 
+É basicamente um Middleware do ExpressJS que adiciona várias configurações nos **headers** da nossa resposta para habilitar algumas proteções como Cross Site Scripting. Etc.
 
+#### 12.1 Instalação
 
+```shell
+yarn add helmet
+```
+
+asda
 
 ------
 
